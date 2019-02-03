@@ -277,7 +277,7 @@ class TaskController extends BaseController
             Session::flash('message', trans('texts.updated_task_status'));
             return $this->returnBulk($this->entityType, $action, $ids);
         } elseif ($action == 'invoice' || $action == 'add_to_invoice') {
-            $tasks = Task::scope($ids)->with('account', 'client', 'project')->orderBy('project_id', 'id')->get();
+            $tasks = Task::scope($ids)->with('account', 'user', 'client', 'project')->orderBy('project_id', 'id')->get();
             $clientPublicId = false;
             $data = [];
 
@@ -305,7 +305,7 @@ class TaskController extends BaseController
                 $showProject = $lastProjectId != $task->project_id;
                 $data[] = [
                     'publicId' => $task->public_id,
-                    'description' => $task->present()->invoiceDescription($account, $showProject),
+                    'description' => $task->present()->invoiceDescription($account, $showProject, true, 'startDate', $task->user),
                     'duration' => $task->getHours(),
                     'cost' => $task->getRate(),
                 ];

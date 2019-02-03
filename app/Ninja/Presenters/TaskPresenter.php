@@ -41,12 +41,17 @@ class TaskPresenter extends EntityPresenter
      *
      * @return mixed
      */
-    public function invoiceDescription($account, $showProject)
+    public function invoiceDescription($account, $showProject, $showUsername = true, $dateTimeFormat = 'startDate', $user)
     {
         $str = '';
 
         if ($showProject && $project = $this->project()) {
             $str .= "## {$project}\n\n";
+        }
+
+        $username = '';
+        if ($showUsername && $user) {
+            $username .= " ({$user->first_name} {$user->last_name})";
         }
 
         if ($description = trim($this->entity->description)) {
@@ -56,7 +61,51 @@ class TaskPresenter extends EntityPresenter
         $parts = json_decode($this->entity->time_log) ?: [];
         $times = [];
 
-        foreach ($parts as $part) {
+        if ($dateTimeFormat == 'startDate') {
+            $start = $parts[0][0];
+            $start = $account->formatDate('@' . intval($start));
+            $times[] = "### {$start}{$username}";
+        } else {
+            foreach ($parts as $part) {
+                $start = $part[0];
+                if (count($part) == 1 || ! $part[1]) {
+                    $end = time();
+                } else {
+                    $end = $part[1];
+                }
+
+                $start = $account->formatDateTime('@' . intval($start));
+                $end = $account->formatTime('@' . intval($end));
+                $times[] = "### {$start} - {$end}{$username}";
+            }
+        }
+
+        return $str . implode("\n", $times);
+        $str = '';
+
+        $parts = json_decode($this->entity->time_log) ?: [];
+        $times = [];
+
+
+        if ($dateTimeFormat == 'startDate') {
+            $start = $parts[0][0];
+            $start = $account->formatDate('@' . intval($start));
+            $times[] = "### {$start}";
+        } else {
+            foreach ($parts as $part) {
+                $start = $part[0];
+                if (count($part) == 1 || ! $part[1]) {
+                    $end = time();
+                } else {
+                    $end = $part[1];
+                }
+
+                $start = $account->formatDateTime('@' . intval($start));
+                $end = $account->formatTime('@' . intval($end));
+                $times[] = "### {$start} - {$end}";
+            }
+        }
+        /*foreach ($parts as $part) {
             $start = $part[0];
             if (count($part) == 1 || ! $part[1]) {
                 $end = time();
@@ -68,6 +117,14 @@ class TaskPresenter extends EntityPresenter
             $end = $account->formatTime('@' . intval($end));
 
             $times[] = "### {$start} - {$end}";
+        }*/
+
+        if ($showProject && $project = $this->project()) {
+            $str .= "## {$start}: {$project}\n\n";
+        }
+
+        if ($description = trim($this->entity->description)) {
+            $str .= $description . "\n\n";
         }
 
         return $str . implode("\n", $times);
